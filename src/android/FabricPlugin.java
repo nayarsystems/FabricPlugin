@@ -1,10 +1,7 @@
 package com.sarriaroman.fabric;
 
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaPlugin;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.app.Activity;
+import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.AddToCartEvent;
@@ -22,13 +19,16 @@ import com.crashlytics.android.answers.SearchEvent;
 import com.crashlytics.android.answers.ShareEvent;
 import com.crashlytics.android.answers.SignUpEvent;
 import com.crashlytics.android.answers.StartCheckoutEvent;
+import com.crashlytics.android.core.CrashlyticsCore;
 
-import android.util.Log;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaPlugin;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import java.lang.reflect.Method;
-import java.lang.StackTraceElement;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Iterator;
 
@@ -39,7 +39,35 @@ public class FabricPlugin extends CordovaPlugin {
 
 	@Override
 	protected void pluginInitialize() {
-		Fabric.with(this.cordova.getActivity().getApplicationContext(), new Crashlytics(), new Answers());
+        boolean debug = false;
+
+        try {
+            debug = isOnDebug();
+        } catch (Exception e) {
+            Log.e(pluginName, "Can't get if debug is enabled", e);
+        }
+
+        Crashlytics crashlyticsKit = new Crashlytics.Builder()
+                .core(new CrashlyticsCore.Builder().disabled(debug).build())
+                .build();
+        Fabric.with(this.cordova.getActivity().getApplicationContext(), crashlyticsKit);
+    }
+
+    private boolean isOnDebug() throws Exception {
+        boolean debug = false;
+
+        Activity activity = cordova.getActivity();
+        String buildConfigClassName = activity.getPackageName() + ".BuildConfig";
+
+        Class c = Class.forName(buildConfigClassName);
+        if (c != null) {
+            Field field = c.getField("DEBUG");
+            if (null != field) {
+                debug = field.getBoolean(c);
+            }
+        }
+
+        return debug;
 	}
 
 	@Override
