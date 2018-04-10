@@ -47,7 +47,10 @@
 
 - (void)pluginInitialize
 {
+#ifdef DEBUG
+#else
     [Fabric with:@[[Crashlytics class], [Answers class]]];
+#endif    
 }
 
 #pragma mark - Answers
